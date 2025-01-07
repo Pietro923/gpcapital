@@ -1,19 +1,19 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const Billing: React.FC = () => {
+const Providers: React.FC = () => {
   return (
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Facturación AFIP</CardTitle>
+          <CardTitle>Proveedores</CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Contenido de facturación */}
+          {/* Contenido de proveedores */}
         </CardContent>
       </Card>
     </div>
   );
 };
 
-export default Billing;
+export default Providers;
