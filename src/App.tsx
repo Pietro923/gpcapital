@@ -8,7 +8,9 @@ import {
   Menu,
   UserCheck,
   CreditCard,
-  LucideIcon
+  LucideIcon,
+  ShoppingCart,
+  DollarSign
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -21,10 +23,12 @@ import LoanSimulator from "./pages/LoanSimulator";
 import ClientAnalysis from "./pages/ClientAnalysis";
 import Providers from "./pages/Providers";
 import Billing from "./pages/Billing";
+import Compras from "./pages/Purchases";
+import Caja from "./pages/CashRegister";
 
 // Definición de tipos
 interface Section {
-  id: "clientes" | "cuotas" | "simulador" | "analisis" | "proveedores" | "facturacion";
+  id: "clientes" | "cuotas" | "simulador" | "analisis" | "proveedores" | "facturacion" | "compras" | "caja";
   name: string;
   icon: LucideIcon;
   component?: React.FC;
@@ -84,7 +88,21 @@ export default function App() {
       icon: Receipt, 
       component: Billing,
       description: "Generación de facturas tipo A/B"
-    }
+    },
+    { 
+      id: "compras", 
+      name: "Compras", 
+      icon: ShoppingCart, 
+      component: Compras,
+      description: "Gestión de compras"
+    },
+    { 
+      id: "caja", 
+      name: "Caja", 
+      icon: DollarSign, 
+      component: Caja,
+      description: "Gestión de Caja"
+    },
   ];
 
   const currentSectionData = sections.find(s => s.id === currentSection);
