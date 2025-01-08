@@ -106,7 +106,7 @@ export default function App() {
           <div className="flex items-center space-x-2">
             <CreditCard className="h-6 w-6 text-blue-600" />
             <h1 className={cn(
-              "font-bold text-blue-600 transition-all duration-300",
+              "font-bold text-gray-600 transition-all duration-300",
               isSidebarCollapsed ? "hidden" : "text-xl"
             )}>
               GP Capital

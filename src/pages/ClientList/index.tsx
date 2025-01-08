@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, Plus, FileText, UserX, UserCheck } from "lucide-react";
+import { Search, Plus, FileText, UserX, UserCheck, Download } from "lucide-react";
 
 // Tipos
 interface Cliente {
@@ -34,6 +34,10 @@ interface Cliente {
   monto: number;
   estado: 'aprobado' | 'rechazado' | 'pendiente';
   fechaSolicitud: string;
+}
+
+interface ExcelRow {
+  [key: string]: string | number;
 }
 
 const ClientList: React.FC = () => {
@@ -109,14 +113,58 @@ const ClientList: React.FC = () => {
       filterEstado === 'todos' || cliente.estado === filterEstado
     );
 
+    const exportToExcel = () => {
+      // Preparar los datos para el Excel
+      const excelData: ExcelRow[] = filteredClientes.map(cliente => ({
+        'Nombre': cliente.nombre,
+        'DNI': cliente.dni,
+        'Empresa': cliente.empresa,
+        'Producto': cliente.producto,
+        'Monto': cliente.monto,
+        'Estado': cliente.estado,
+        'Fecha Solicitud': new Date(cliente.fechaSolicitud).toLocaleDateString('es-AR')
+      }));
+  
+      // Crear el contenido del Excel
+      let csvContent = '\ufeff'; // BOM para caracteres especiales
+      
+      // Agregar headers
+      const headers = Object.keys(excelData[0]);
+      csvContent += headers.join(';') + '\n';
+  
+      // Agregar datos
+      excelData.forEach(row => {
+        const values = headers.map(header => {
+          const value = row[header];
+          return typeof value === 'string' ? `"${value}"` : value;
+        });
+        csvContent += values.join(';') + '\n';
+      });
+  
+      // Crear y descargar el archivo
+      const blob = new Blob([csvContent], { type: 'application/vnd.ms-excel;charset=utf-8' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `clientes_${new Date().toISOString().split('T')[0]}.xls`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+
   return (
     <div className="space-y-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle>Listado de Clientes</CardTitle>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" /> Nuevo Cliente
-          </Button>
+          <div className="flex space-x-2">
+            <Button variant="outline" onClick={exportToExcel}>
+              <Download className="mr-2 h-4 w-4" /> Exportar
+            </Button>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" /> Nuevo Cliente
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col space-y-4">
