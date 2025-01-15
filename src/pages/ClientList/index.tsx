@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Database from '@tauri-apps/plugin-sql';
 import {
   Table,
   TableBody,
@@ -22,17 +23,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, Plus, FileText, UserX, UserCheck, Download } from "lucide-react";
-
-// Tipos
+import { Search, FileText, UserX, UserCheck, Download } from "lucide-react";
+import NewClientForm from '@/components/NewClientForm';  // Add this import
 interface Cliente {
-  id: string;
+  id: number;
   nombre: string;
   dni: string;
   empresa: string;
   producto: string;
   monto: number;
-  estado: 'aprobado' | 'rechazado' | 'pendiente';
+  estado: 'Aprobado' | 'Rechazado' | 'Pendiente';
   fechaSolicitud: string;
 }
 
@@ -44,43 +44,36 @@ const ClientList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEmpresa, setFilterEmpresa] = useState('todas');
   const [filterEstado, setFilterEstado] = useState('todos');
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [empresas, setEmpresas] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Datos de ejemplo
-  const clientes: Cliente[] = [
-    {
-      id: '1',
-      nombre: 'Juan Pérez',
-      dni: '28456789',
-      empresa: 'Pueble',
-      producto: 'Case Tractor',
-      monto: 15000000,
-      estado: 'aprobado',
-      fechaSolicitud: '2024-01-05'
-    },
-    {
-      id: '2',
-      nombre: 'María González',
-      dni: '30789456',
-      empresa: 'Magi',
-      producto: 'Ducati Monster',
-      monto: 8000000,
-      estado: 'pendiente',
-      fechaSolicitud: '2024-01-06'
-    },
-    {
-      id: '3',
-      nombre: 'Carlos Rodríguez',
-      dni: '25123456',
-      empresa: 'ub.ti',
-      producto: 'Audi A3',
-      monto: 12000000,
-      estado: 'rechazado',
-      fechaSolicitud: '2024-01-07'
+  useEffect(() => {
+    loadClientes();
+  }, []);
+
+  const loadClientes = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const db = await Database.load('sqlite:gp-capital.db');
+      const result = await db.select<Cliente[]>('SELECT * FROM clientes');
+      setClientes(result);
+
+      // Obtener lista única de empresas para el filtro
+      const uniqueEmpresas = [...new Set(result.map(cliente => cliente.empresa))].filter(Boolean);
+      setEmpresas(uniqueEmpresas);
+    } catch (err) {
+      console.error('Error al cargar clientes:', err);
+      setError('Error al cargar los datos de clientes');
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  };
 
-  const getEstadoColor = (estado: Cliente['estado']) => {
-    switch (estado) {
+  const getEstadoColor = (estado: string) => {
+    switch (estado.toLowerCase()) {
       case 'aprobado':
         return 'text-green-600 bg-green-100';
       case 'rechazado':
@@ -90,8 +83,8 @@ const ClientList: React.FC = () => {
     }
   };
 
-  const getEstadoIcon = (estado: Cliente['estado']) => {
-    switch (estado) {
+  const getEstadoIcon = (estado: string) => {
+    switch (estado.toLowerCase()) {
       case 'aprobado':
         return <UserCheck className="w-4 h-4" />;
       case 'rechazado':
@@ -110,47 +103,50 @@ const ClientList: React.FC = () => {
       filterEmpresa === 'todas' || cliente.empresa === filterEmpresa
     )
     .filter(cliente => 
-      filterEstado === 'todos' || cliente.estado === filterEstado
+      filterEstado === 'todos' || cliente.estado.toLowerCase() === filterEstado
     );
 
-    const exportToExcel = () => {
-      // Preparar los datos para el Excel
-      const excelData: ExcelRow[] = filteredClientes.map(cliente => ({
-        'Nombre': cliente.nombre,
-        'DNI': cliente.dni,
-        'Empresa': cliente.empresa,
-        'Producto': cliente.producto,
-        'Monto': cliente.monto,
-        'Estado': cliente.estado,
-        'Fecha Solicitud': new Date(cliente.fechaSolicitud).toLocaleDateString('es-AR')
-      }));
-  
-      // Crear el contenido del Excel
-      let csvContent = '\ufeff'; // BOM para caracteres especiales
-      
-      // Agregar headers
-      const headers = Object.keys(excelData[0]);
-      csvContent += headers.join(';') + '\n';
-  
-      // Agregar datos
-      excelData.forEach(row => {
-        const values = headers.map(header => {
-          const value = row[header];
-          return typeof value === 'string' ? `"${value}"` : value;
-        });
-        csvContent += values.join(';') + '\n';
+  const exportToExcel = () => {
+    const excelData: ExcelRow[] = filteredClientes.map(cliente => ({
+      'Nombre': cliente.nombre,
+      'DNI': cliente.dni,
+      'Empresa': cliente.empresa,
+      'Producto': cliente.producto,
+      'Monto': cliente.monto,
+      'Estado': cliente.estado,
+      'Fecha Solicitud': new Date(cliente.fechaSolicitud).toLocaleDateString('es-AR')
+    }));
+
+    let csvContent = '\ufeff';
+    
+    const headers = Object.keys(excelData[0]);
+    csvContent += headers.join(';') + '\n';
+
+    excelData.forEach(row => {
+      const values = headers.map(header => {
+        const value = row[header];
+        return typeof value === 'string' ? `"${value}"` : value;
       });
-  
-      // Crear y descargar el archivo
-      const blob = new Blob([csvContent], { type: 'application/vnd.ms-excel;charset=utf-8' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `clientes_${new Date().toISOString().split('T')[0]}.xls`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    };
+      csvContent += values.join(';') + '\n';
+    });
+
+    const blob = new Blob([csvContent], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `clientes_${new Date().toISOString().split('T')[0]}.xls`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-64">Cargando clientes...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-600 p-4">{error}</div>;
+  }
 
   return (
     <div className="space-y-4">
@@ -161,14 +157,11 @@ const ClientList: React.FC = () => {
             <Button variant="outline" onClick={exportToExcel}>
               <Download className="mr-2 h-4 w-4" /> Exportar
             </Button>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> Nuevo Cliente
-            </Button>
+            <NewClientForm onClientAdded={loadClientes} />
           </div>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col space-y-4">
-            {/* Filtros */}
             <div className="flex space-x-4">
               <div className="flex-1 relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-400" />
@@ -188,11 +181,11 @@ const ClientList: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todas">Todas las empresas</SelectItem>
-                  <SelectItem value="Pueble">Pueble</SelectItem>
-                  <SelectItem value="Semage">Semage</SelectItem>
-                  <SelectItem value="Magi">Magi</SelectItem>
-                  <SelectItem value="ub.ti">ub.ti</SelectItem>
-                  <SelectItem value="Cpm">Cpm</SelectItem>
+                  {empresas.map((empresa) => (
+                    <SelectItem key={empresa} value={empresa}>
+                      {empresa}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <Select
@@ -210,8 +203,6 @@ const ClientList: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-
-            {/* Tabla */}
             <div className="rounded-md border">
               <Table>
                 <TableHeader>

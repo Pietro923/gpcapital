@@ -25,7 +25,7 @@ const DatabaseConnectionCheck = () => {
       const db = await Database.load('sqlite:gp-capital.db');
       
       // Consulta para obtener el primer cliente
-      const result = await db.select<Cliente[]>('SELECT * FROM clientes WHERE id = 3');
+      const result = await db.select<Cliente[]>('SELECT * FROM clientes WHERE id = 4');
       console.log('Cliente encontrado:', result);
       
       if (result.length > 0) {
@@ -42,8 +42,13 @@ const DatabaseConnectionCheck = () => {
     }
   };
 
+  const closeClientInfo = () => {
+    setCliente(null);
+    setConnectionStatus(''); // Reinicia el estado de conexión
+  };
+
   return (
-    <div className="p-4 space-y-4">
+    <div>
       <Button 
         onClick={checkConnection}
         disabled={isLoading}
@@ -61,17 +66,25 @@ const DatabaseConnectionCheck = () => {
             </AlertDescription>
           </Alert>
           
-          <div className="bg-white p-4 rounded-lg shadow">
-            <h3 className="text-lg font-semibold mb-2">Datos del Cliente:</h3>
-            <div className="space-y-2">
-              <p><strong>Nombre:</strong> {cliente.nombre}</p>
-              <p><strong>DNI:</strong> {cliente.dni}</p>
-              <p><strong>Empresa:</strong> {cliente.empresa}</p>
-              <p><strong>Producto:</strong> {cliente.producto}</p>
-              <p><strong>Monto:</strong> ${cliente.monto.toFixed(2)}</p>
-              <p><strong>Estado:</strong> {cliente.estado}</p>
-              <p><strong>Fecha de Solicitud:</strong> {cliente.fechaSolicitud}</p>
+          <div className="bg-white p-4 rounded-lg shadow space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Datos del Cliente:</h3>
+              <div className="space-y-2">
+                <p><strong>Nombre:</strong> {cliente.nombre}</p>
+                <p><strong>DNI:</strong> {cliente.dni}</p>
+                <p><strong>Empresa:</strong> {cliente.empresa}</p>
+                <p><strong>Producto:</strong> {cliente.producto}</p>
+                <p><strong>Monto:</strong> ${cliente.monto.toFixed(2)}</p>
+                <p><strong>Estado:</strong> {cliente.estado}</p>
+                <p><strong>Fecha de Solicitud:</strong> {cliente.fechaSolicitud}</p>
+              </div>
             </div>
+            <Button 
+              onClick={closeClientInfo} 
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              Cerrar Información
+            </Button>
           </div>
         </div>
       )}
