@@ -15,7 +15,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
-
 // Importar componentes de páginas
 import ClientList from "./pages/ClientList";
 import LoanDetails from "./pages/LoanDetails";
@@ -25,6 +24,7 @@ import Providers from "./pages/Providers";
 import Billing from "./pages/Billing";
 import Compras from "./pages/Purchases";
 import Caja from "./pages/CashRegister";
+import DatabaseConnectionCheck from './components/DatabaseConnectionCheck';
 
 // Definición de tipos
 interface Section {
@@ -186,6 +186,7 @@ export default function App() {
               <Button size="sm">
                 Nuevo Registro
               </Button>
+              <DatabaseConnectionCheck />
             </div>
           </div>
         </header>
